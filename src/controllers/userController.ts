@@ -8,6 +8,8 @@ export const getUserProfile = async (req: AuthRequest, res: Response) => {
     try {
         const token = req.headers['authorization'];
 
+        console.log(`tentando buscar usuario com o token "${token}"`)
+
         const dataTokenVerified = jwt.verify(token, process.env.JWT_SECRET as string) as dataToken;
         const { id } = dataTokenVerified
 
