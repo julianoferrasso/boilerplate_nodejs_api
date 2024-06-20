@@ -5,6 +5,7 @@ import { AuthRequest } from '../middlewares/authMiddleware';
 export const getUserProfile = async (req: AuthRequest, res: Response) => {
     try {
         const { email } = req.body
+        console.log(`tentando buscar usuario com email "${email}"`)
         if (!email) {
             return res.status(400).json({ error: 'Email requerido' });
         }

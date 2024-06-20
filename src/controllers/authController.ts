@@ -11,6 +11,7 @@ const validateEmail = (email: any) => {
 export const register = async (req: Request, res: Response) => {
     try {
         let { email, password } = req.body;
+        console.log(`tentando fazer registro com email "${email}" e password "${password}"`)
         if (!email || !password) {
             return res.status(400).json({ error: 'Email e Senha requeridos' });
         }
@@ -52,6 +53,7 @@ export const register = async (req: Request, res: Response) => {
 export const login = async (req: Request, res: Response) => {
     try {
         let { email, password } = req.body;
+        console.log(`tentando fazer login com email "${email}" e password "${password}"`)
         if (!email || !password) {
             return res.status(400).json({ error: 'Email e Senha requeridos' });
         }

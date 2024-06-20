@@ -1,5 +1,4 @@
-# nodejs-api-boilerplate
-Boilerplate de uma API node.js 
+# Boilerplate de uma API node.js 
 
 - Typescript
 - Express
