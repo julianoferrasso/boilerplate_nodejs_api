@@ -55,7 +55,7 @@ export const login = async (req: Request, res: Response) => {
         let { email, password } = req.body;
         console.log(`tentando fazer login com email "${email}" e password "${password}"`)
         if (!email || !password) {
-            return res.status(400).json({ error: 'Email e Senha requeridos' });
+            return res.status(400).json({ message: 'Email e Senha requeridos' });
         }
 
         email = email.toLowerCase()
@@ -65,18 +65,18 @@ export const login = async (req: Request, res: Response) => {
                 where: { email },
             });
             if (!user) {
-                return res.status(400).json({ error: 'User or Password incorrect' });
+                return res.status(400).json({ message: 'User or Password incorrect' });
             }
             const validPassword = await bcrypt.compare(password, user.password);
             if (!validPassword) {
-                return res.status(400).json({ error: 'User or Password incorrect' });
+                return res.status(400).json({ message: 'User or Password incorrect' });
             }
             const token = await generateToken({ email: user.email, id: user.id } as dataToken);
             res.json({ token });
         } catch (error) {
-            res.status(400).json({ error: 'Something went wrong' });
+            res.status(400).json({ message: 'Something went wrong' });
         }
     } catch {
-        res.status(500).json({ error: 'Something goes wrong!' });
+        res.status(500).json({ message: 'Something goes wrong!' });
     }
 };

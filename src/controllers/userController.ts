@@ -19,7 +19,7 @@ export const getUserProfile = async (req: AuthRequest, res: Response) => {
             });
 
             if (!user) {
-                return res.status(404).json({ error: 'User not found' });
+                return res.status(404).json({ message: 'User not found' });
             }
             res.status(200).json({
                 name: user.name,
@@ -28,10 +28,10 @@ export const getUserProfile = async (req: AuthRequest, res: Response) => {
                 emailVerified: user.emailVerified
             });
         } catch (error) {
-            res.status(400).json({ error: 'Something went wrong BD' });
+            res.status(400).json({ message: 'Something went wrong BD' });
         }
 
     } catch {
-        res.status(400).json({ error: 'Something went wrong Request' });
+        res.status(400).json({ message: 'Something went wrong Request' });
     }
 };
