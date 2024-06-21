@@ -8,7 +8,10 @@ export interface AuthRequest extends Request {
 }
 
 export const authMiddleware = async (req: AuthRequest, res: Response, next: NextFunction) => {
-    const token = req.headers['authorization'];
+    const authHeader = req.headers['authorization'];
+    const token = authHeader?.split(' ')[1];
+
+    // console.log(`Passando pelo middleware com token: "${token}"`)
 
     if (!token) {
         return res.status(401).json({ message: 'Access Denied' });
@@ -19,6 +22,6 @@ export const authMiddleware = async (req: AuthRequest, res: Response, next: Next
         req.token = dataTokenVerified;
         next();
     } catch (error) {
-        res.status(400).json({ message: 'Invalid Token' });
+        res.status(400).json({ message: `Invalid Token toque|${token}|` });
     }
 };

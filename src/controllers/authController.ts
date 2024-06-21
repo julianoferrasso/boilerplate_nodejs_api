@@ -53,7 +53,8 @@ export const register = async (req: Request, res: Response) => {
 export const login = async (req: Request, res: Response) => {
     try {
         let { email, password } = req.body;
-        console.log(`tentando fazer login com email "${email}" e password "${password}"`)
+        // console.log(`tentando fazer login com email "${email}" e password "${password}"`)
+
         if (!email || !password) {
             return res.status(400).json({ message: 'Email e Senha requeridos' });
         }
@@ -74,9 +75,9 @@ export const login = async (req: Request, res: Response) => {
             const token = await generateToken({ email: user.email, id: user.id } as dataToken);
             res.json({ token });
         } catch (error) {
-            res.status(400).json({ message: 'Something went wrong' });
+            res.status(400).json({ message: 'Something went wrong BD auth' });
         }
     } catch {
-        res.status(500).json({ message: 'Something goes wrong!' });
+        res.status(500).json({ message: 'Something goes wrong auth!' });
     }
 };

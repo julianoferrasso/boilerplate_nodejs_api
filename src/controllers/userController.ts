@@ -6,9 +6,10 @@ import { AuthRequest } from '../middlewares/authMiddleware';
 
 export const getUserProfile = async (req: AuthRequest, res: Response) => {
     try {
-        const token = req.headers['authorization'];
+        const authHeader = req.headers['authorization'];
+        const token = authHeader?.split(' ')[1];
 
-        console.log(`tentando buscar usuario com o token "${token}"`)
+        // console.log(`tentando buscar getUser com  token "${token}"`)
 
         const dataTokenVerified = jwt.verify(token, process.env.JWT_SECRET as string) as dataToken;
         const { id } = dataTokenVerified
@@ -28,10 +29,10 @@ export const getUserProfile = async (req: AuthRequest, res: Response) => {
                 emailVerified: user.emailVerified
             });
         } catch (error) {
-            res.status(400).json({ message: 'Something went wrong BD' });
+            res.status(400).json({ message: 'Something went wrong BD user' });
         }
 
     } catch {
-        res.status(400).json({ message: 'Something went wrong Request' });
+        res.status(400).json({ message: 'Something went wrong Request user' });
     }
 };
