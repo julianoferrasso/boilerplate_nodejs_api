@@ -15,19 +15,21 @@ export const getUserProfile = async (req: AuthRequest, res: Response) => {
         const { id } = dataTokenVerified
 
         try {
-            const user = await prisma.user.findUnique({
+            const userFind = await prisma.user.findUnique({
                 where: { id },
             });
 
-            if (!user) {
+            if (!userFind) {
                 return res.status(404).json({ message: 'User not found' });
             }
-            res.status(200).json({
-                name: user.name,
-                email: user.email,
-                avatarUrl: user.avatarUrl,
-                emailVerified: user.emailVerified
-            });
+            const user = {
+                id: userFind.id,
+                name: userFind.name,
+                email: userFind.email,
+                avatarUrl: userFind.avatarUrl,
+                emailVerified: userFind.emailVerified
+            };
+            res.status(200).json(user);
         } catch (error) {
             res.status(400).json({ message: 'Something went wrong BD user' });
         }

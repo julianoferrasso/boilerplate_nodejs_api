@@ -8,6 +8,8 @@ const validateEmail = (email: any) => {
     return regex.test(email);
 };
 
+const delay = (amount = 1000) => new Promise(resolve => setTimeout(resolve, amount))
+
 export const register = async (req: Request, res: Response) => {
     try {
         let { email, password } = req.body;
@@ -51,6 +53,7 @@ export const register = async (req: Request, res: Response) => {
 };
 
 export const login = async (req: Request, res: Response) => {
+    await delay()
     try {
         let { email, password } = req.body;
         // console.log(`tentando fazer login com email "${email}" e password "${password}"`)
@@ -62,18 +65,20 @@ export const login = async (req: Request, res: Response) => {
         email = email.toLowerCase()
 
         try {
-            const user = await prisma.user.findUnique({
+            const userFind = await prisma.user.findUnique({
                 where: { email },
             });
-            if (!user) {
+
+            if (!userFind) {
                 return res.status(400).json({ message: 'User or Password incorrect' });
             }
-            const validPassword = await bcrypt.compare(password, user.password);
+            const validPassword = await bcrypt.compare(password, userFind.password);
             if (!validPassword) {
                 return res.status(400).json({ message: 'User or Password incorrect' });
             }
-            const token = await generateToken({ email: user.email, id: user.id } as dataToken);
-            res.json({ token });
+            const token = await generateToken({ email: userFind.email, id: userFind.id } as dataToken);
+            const user = { id: userFind.id, name: userFind.name, email: userFind.email, avatarurl: userFind.avatarUrl };
+            res.json({ token, user });
         } catch (error) {
             res.status(400).json({ message: 'Something went wrong BD auth' });
         }
