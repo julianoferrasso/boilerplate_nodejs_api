@@ -153,7 +153,7 @@ export const recoverPassword = async (req: Request, res: Response) => {
             });
 
             if (!userFind) {
-                return res.status(404).json({ message: 'fail' });
+                return res.status(404).json({ message: 'Email não cadastrado' });
             }
 
             const { token, hash } = await generateResetTokenHash()
