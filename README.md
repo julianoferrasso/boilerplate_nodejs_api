@@ -5,3 +5,8 @@
 - JWT
 - Prisma
 
+
+TODO:
+
+[] Tratar erros typescript
+
