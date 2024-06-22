@@ -2,6 +2,8 @@ import { Request, Response } from 'express';
 import prisma from '../prisma/client';
 import bcrypt from 'bcryptjs';
 import { generateToken, dataToken } from '../config/jwtConfig';
+import { sendPasswordResetEmail } from '../services/emailService'
+import { compareTokenHash, generateResetTokenHash } from '../services/utils';
 
 const validateEmail = (email: any) => {
     const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -91,12 +93,58 @@ export const recoverPassword = async (req: Request, res: Response) => {
     await delay()
     try {
         let { email } = req.body;
+        let { token } = req.body;
+        let { password } = req.body;
+
         console.log(`tentando recuperar senha com email "${email}"`)
+        console.log(`tentando recuperar senha com token "${token}"`)
+
+        // Se tiver os 3 campos então reseta senha
+        if (email && token && password) {
+            email = email.toLowerCase()
+            try {
+                const userFind = await prisma.user.findUnique({
+                    where: { email },
+                });
+                // Se nao encontra usuario
+                if (!userFind) {
+                    return res.status(400).json({ message: 'fail' });
+                }
+                //Se data expirada
+                const now = new Date(Date.now() + 3600000)
+                console.log(`User.passwordResetTokenExpires "${userFind.passwordResetTokenExpires}"`)
+                console.log(`now "${now}"`)
+                if (userFind.passwordResetTokenExpires > now) {
+                    return res.status(400).json({ message: 'token expirado' });
+                }
+                // Se hash nao coincidir com token
+                console.log(`User.passwordResetTokenExpires "${userFind.passwordReseHashToken}"`)
+                const result = await compareTokenHash(token, userFind.passwordReseHashToken)
+                console.log(`Result "${result}"`)
+                if (!result) {
+                    return res.status(400).json({ message: 'token inválido' });
+                }
+
+                if (result) {
+                    // Faz o hash do password
+                    const salt = await bcrypt.genSalt(10);
+                    const hashedPassword = await bcrypt.hash(password, salt);
+                    // Salve o hash no banco de dados associado ao usuário
+                    await prisma.user.update({
+                        where: { email },
+                        data: { passwordReseHashToken: null, passwordResetTokenExpires: null, password: hashedPassword }, // zera campos
+                    });
+                    return res.status(200).json({ message: 'Senha redefinida com sucesso' });
+                }
+            } catch (error) {
+                return res.status(500).json({ message: 'Estamos com problema no momento. Tente mais tarde' });
+            }
+        }
+
 
         if (!email) {
             return res.status(400).json({ message: 'Email requerido' });
         }
-
         email = email.toLowerCase()
 
         try {
@@ -105,12 +153,27 @@ export const recoverPassword = async (req: Request, res: Response) => {
             });
 
             if (!userFind) {
-                return res.status(401).json({ message: 'Email não encontrado' });
+                return res.status(404).json({ message: 'fail' });
             }
 
-            // logica para gravar hash de recuperação de senha e envio de email
-            const user = { id: userFind.id, name: userFind.name, email: userFind.email, avatarurl: userFind.avatarUrl };
-            res.json({ user });
+            const { token, hash } = await generateResetTokenHash()
+
+            console.log(token)
+
+            // Salve o hash no banco de dados associado ao usuário
+            await prisma.user.update({
+                where: { email },
+                data: { passwordReseHashToken: hash, passwordResetTokenExpires: new Date(Date.now() + 3600000) }, // Token expira em 1 hora
+            });
+
+            const emailSent = await sendPasswordResetEmail(email, token)
+
+            if (emailSent) {
+                res.json({ message: 'Email de recuperação de senha enviado com sucesso' });
+            } else {
+                res.status(500).json({ message: 'Falha ao enviar email de recuperação de senha' });
+            }
+
         } catch (error) {
             res.status(400).json({ message: 'Something went wrong BD auth' });
         }

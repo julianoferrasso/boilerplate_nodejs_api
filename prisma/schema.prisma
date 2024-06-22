@@ -14,13 +14,15 @@ datasource db {
 }
 
 model User {
-  id            String    @id @default(uuid())
-  name          String?
-  email         String    @unique
-  emailVerified Boolean   @default(false)
-  avatarUrl     String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  deletedAt     DateTime?
-  password      String
+  id                        String    @id @default(uuid())
+  name                      String?
+  email                     String    @unique
+  emailVerified             Boolean   @default(false)
+  avatarUrl                 String?
+  createdAt                 DateTime  @default(now())
+  updatedAt                 DateTime  @updatedAt
+  deletedAt                 DateTime?
+  password                  String
+  passwordReseHashToken     String?
+  passwordResetTokenExpires DateTime?
 }
