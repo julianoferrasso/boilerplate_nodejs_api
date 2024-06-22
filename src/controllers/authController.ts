@@ -114,7 +114,7 @@ export const recoverPassword = async (req: Request, res: Response) => {
                 const now = new Date(Date.now() + 3600000)
                 console.log(`User.passwordResetTokenExpires "${userFind.passwordResetTokenExpires}"`)
                 console.log(`now "${now}"`)
-                if (userFind.passwordResetTokenExpires > now) {
+                if (userFind.passwordResetTokenExpires < now) {
                     return res.status(400).json({ message: 'token expirado' });
                 }
                 // Se hash nao coincidir com token
@@ -164,6 +164,7 @@ export const recoverPassword = async (req: Request, res: Response) => {
             await prisma.user.update({
                 where: { email },
                 data: { passwordReseHashToken: hash, passwordResetTokenExpires: new Date(Date.now() + 3600000) }, // Token expira em 1 hora
+                //data: { passwordReseHashToken: hash, passwordResetTokenExpires: new Date(Date.now() + 60000) }, // Token expira em 1 minuto
             });
 
             const emailSent = await sendPasswordResetEmail(email, token)
