@@ -70,15 +70,47 @@ export const login = async (req: Request, res: Response) => {
             });
 
             if (!userFind) {
-                return res.status(400).json({ message: 'User or Password incorrect' });
+                return res.status(401).json({ message: 'User or Password incorrect' });
             }
             const validPassword = await bcrypt.compare(password, userFind.password);
             if (!validPassword) {
-                return res.status(400).json({ message: 'User or Password incorrect' });
+                return res.status(401).json({ message: 'User or Password incorrect' });
             }
             const token = await generateToken({ email: userFind.email, id: userFind.id } as dataToken);
             const user = { id: userFind.id, name: userFind.name, email: userFind.email, avatarurl: userFind.avatarUrl };
             res.json({ token, user });
+        } catch (error) {
+            res.status(400).json({ message: 'Something went wrong BD auth' });
+        }
+    } catch {
+        res.status(500).json({ message: 'Something goes wrong auth!' });
+    }
+};
+
+export const recoverPassword = async (req: Request, res: Response) => {
+    await delay()
+    try {
+        let { email } = req.body;
+        console.log(`tentando recuperar senha com email "${email}"`)
+
+        if (!email) {
+            return res.status(400).json({ message: 'Email requerido' });
+        }
+
+        email = email.toLowerCase()
+
+        try {
+            const userFind = await prisma.user.findUnique({
+                where: { email },
+            });
+
+            if (!userFind) {
+                return res.status(401).json({ message: 'Email não encontrado' });
+            }
+
+            // logica para gravar hash de recuperação de senha e envio de email
+            const user = { id: userFind.id, name: userFind.name, email: userFind.email, avatarurl: userFind.avatarUrl };
+            res.json({ user });
         } catch (error) {
             res.status(400).json({ message: 'Something went wrong BD auth' });
         }
