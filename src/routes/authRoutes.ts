@@ -1,10 +1,10 @@
 import { Router } from 'express';
-import { register, login, recoverPassword } from '../controllers/authController';
+import { register, login, resetPassword } from '../controllers/authController';
 
 const router = Router();
 
 router.post('/register', register);
 router.post('/login', login);
-router.post('/recoverPassword', recoverPassword);
+router.post('/resetPassword', resetPassword);
 
 export default router;

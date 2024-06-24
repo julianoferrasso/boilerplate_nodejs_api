@@ -4,7 +4,7 @@ import mailtrapConfig from '../config/mailtrap'
 const transporter = nodemailer.createTransport(mailtrapConfig);
 
 export async function sendPasswordResetEmail(userEmail: string, resetToken: string) {
-    const resetUrl = `https://adminplaces.com/resetPassword?token=${resetToken}`;
+    const resetUrl = `https://adminplaces.com/resetPassword?token=${resetToken}&${userEmail}`;
 
     const mailOptions = {
         from: 'no-reply@adminplaces.com',

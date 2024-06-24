@@ -89,7 +89,7 @@ export const login = async (req: Request, res: Response) => {
     }
 };
 
-export const recoverPassword = async (req: Request, res: Response) => {
+export const resetPassword = async (req: Request, res: Response) => {
     await delay()
     try {
         let { email } = req.body;
@@ -118,8 +118,8 @@ export const recoverPassword = async (req: Request, res: Response) => {
                     return res.status(400).json({ message: 'token expirado' });
                 }
                 // Se hash nao coincidir com token
-                console.log(`User.passwordResetTokenExpires "${userFind.passwordReseHashToken}"`)
-                const result = await compareTokenHash(token, userFind.passwordReseHashToken)
+                console.log(`User.passwordResetTokenExpires "${userFind.passwordResetHashToken}"`)
+                const result = await compareTokenHash(token, userFind.passwordResetHashToken)
                 console.log(`Result "${result}"`)
                 if (!result) {
                     return res.status(400).json({ message: 'token inválido' });
@@ -132,7 +132,7 @@ export const recoverPassword = async (req: Request, res: Response) => {
                     // Salve o hash no banco de dados associado ao usuário
                     await prisma.user.update({
                         where: { email },
-                        data: { passwordReseHashToken: null, passwordResetTokenExpires: null, password: hashedPassword }, // zera campos
+                        data: { passwordResetHashToken: null, passwordResetTokenExpires: null, password: hashedPassword }, // zera campos
                     });
                     return res.status(200).json({ message: 'Senha redefinida com sucesso' });
                 }
@@ -140,7 +140,6 @@ export const recoverPassword = async (req: Request, res: Response) => {
                 return res.status(500).json({ message: 'Estamos com problema no momento. Tente mais tarde' });
             }
         }
-
 
         if (!email) {
             return res.status(400).json({ message: 'Email requerido' });
@@ -158,12 +157,12 @@ export const recoverPassword = async (req: Request, res: Response) => {
 
             const { token, hash } = await generateResetTokenHash()
 
-            console.log(token)
+            console.log("gerou o token = ", token)
 
             // Salve o hash no banco de dados associado ao usuário
             await prisma.user.update({
                 where: { email },
-                data: { passwordReseHashToken: hash, passwordResetTokenExpires: new Date(Date.now() + 3600000) }, // Token expira em 1 hora
+                data: { passwordResetHashToken: hash, passwordResetTokenExpires: new Date(Date.now() + 3600000) }, // Token expira em 1 hora
                 //data: { passwordReseHashToken: hash, passwordResetTokenExpires: new Date(Date.now() + 60000) }, // Token expira em 1 minuto
             });
 

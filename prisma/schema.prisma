@@ -23,6 +23,6 @@ model User {
   updatedAt                 DateTime  @updatedAt
   deletedAt                 DateTime?
   password                  String
-  passwordReseHashToken     String?
+  passwordResetHashToken    String?
   passwordResetTokenExpires DateTime?
 }
