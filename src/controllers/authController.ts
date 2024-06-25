@@ -12,20 +12,33 @@ const validateEmail = (email: any) => {
 
 const delay = (amount = 1000) => new Promise(resolve => setTimeout(resolve, amount))
 
-export const register = async (req: Request, res: Response) => {
+export const signUp = async (req: Request, res: Response) => {
     try {
-        let { email, password } = req.body;
-        console.log(`tentando fazer registro com email "${email}" e password "${password}"`)
+        let { name, email, celular, cpf_cnpj, password } = req.body;
+        let cpf, cnpj = null
+        if (cpf_cnpj > 14) {
+            cnpj = cpf_cnpj
+        } else {
+            cpf = cpf_cnpj
+        }
+        console.log(`tentando fazer registro com 
+            name "${name}", 
+            email "${email}", 
+            celular "${celular}, 
+            cpf "${cpf},
+            cnpj "${cnpj},
+            password "${password}"
+            `)
+
         if (!email || !password) {
             return res.status(400).json({ error: 'Email e Senha requeridos' });
         }
-
         email = email.toLowerCase()
-
         if (!validateEmail(email)) {
             return res.status(400).json({ error: 'Invalid email format' });
         }
 
+        // encripta a senha
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
@@ -38,19 +51,25 @@ export const register = async (req: Request, res: Response) => {
             if (!userAlreadyExists) {
                 const user = await prisma.user.create({
                     data: {
+                        name,
+                        celular,
+                        cpf,
+                        cnpj,
                         email,
                         password: hashedPassword,
                     },
                 });
-                res.status(201).json({ message: 'User created successfully', user })
+                res.status(201).json({ message: 'Usuario criado com sucesso', user })
             } else {
-                res.status(409).json({ error: 'Email already in used!' })
+                res.status(409).json({ message: 'Email já cadastrado!' })
             }
         } catch (error) {
-            res.status(500).json({ error: 'Something goes wrong!' });
+            console.log(`Erro ao gravar no Banco de Dados em authController: "${error}" `)
+            res.status(500).json({ message: 'Estamos enfrentando um problema no servidor. Por favor tente mais tarde. Codigo[BD-1]' });
         }
-    } catch {
-        res.status(500).json({ error: 'Something goes wrong!' });
+    } catch (error) {
+        console.log(`Erro ao na funçãi SignUp em authController: "${error}" `)
+        res.status(500).json({ message: 'Estamos enfrentando um problema no servidor. Por favor tente mais tarde. Codigo[AU-1]' });
     }
 };
 
@@ -166,6 +185,7 @@ export const resetPassword = async (req: Request, res: Response) => {
                 //data: { passwordReseHashToken: hash, passwordResetTokenExpires: new Date(Date.now() + 60000) }, // Token expira em 1 minuto
             });
 
+            console.log("Enviando email de reset de senha . . .")
             const emailSent = await sendPasswordResetEmail(email, token)
 
             if (emailSent) {
