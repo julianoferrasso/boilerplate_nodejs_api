@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs';
 import { generateToken, dataToken } from '../config/jwtConfig';
 import { sendActivationAccountEmail, sendPasswordResetEmail } from '../services/emailService'
 import { compareTokenHash, generateResetTokenHash } from '../services/utils';
+import { v4 as uuidv4 } from 'uuid';
 
 const validateEmail = (email: any) => {
     const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -35,12 +36,16 @@ export const signUp = async (req: Request, res: Response) => {
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
+        const tokenEmailVerified = uuidv4();
+
         try {
             const userAlreadyExists = await prisma.user.findUnique({
                 where: {
                     email: email,
                 }
             })
+
+            // Cria usuario no Banco de Dados
             if (!userAlreadyExists) {
                 const user = await prisma.user.create({
                     data: {
@@ -49,10 +54,21 @@ export const signUp = async (req: Request, res: Response) => {
                         cpf,
                         cnpj,
                         email,
+                        tokenEmailVerified,
                         password: hashedPassword,
                     },
                 });
-                res.status(201).json({ message: 'Usuario criado com sucesso', user })
+
+                const userCreated = { name, email, tokenEmailVerified }
+
+                console.log("user: ", user)
+                console.log("userCreated: ", userCreated)
+                console.log("Enviando email de ativação de conta . . .")
+                const emailResetPasswordSent = await sendActivationAccountEmail(email, tokenEmailVerified)
+                if (emailResetPasswordSent) {
+                    res.status(201).json({ message: 'Usuario criado com sucesso', userCreated })
+                }
+
             } else {
                 res.status(409).json({ message: 'Email já cadastrado!' })
             }
@@ -101,16 +117,16 @@ export const login = async (req: Request, res: Response) => {
     }
 };
 
-export const accountActivation = async (req: Request, res: Response) => {
+export const resendEmailActivation = async (req: Request, res: Response) => {
     await delay()
     try {
-        let { email, token } = req.body
+        let { email, tokenEmailVerified } = req.body
         try {
-            if (!email || !token) {
+            if (!email || !tokenEmailVerified) {
                 return res.status(400).json({ message: 'Email ou Token não enviado' });
             }
             console.log("Enviando email de ativação de conta . . .")
-            const emailResetPasswordSent = await sendActivationAccountEmail(email, token)
+            const emailResetPasswordSent = await sendActivationAccountEmail(email, tokenEmailVerified)
             if (emailResetPasswordSent) {
                 res.status(200).json({ message: "Email de ativação enviado com sucesso!" })
             }
