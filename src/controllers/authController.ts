@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import prisma from '../prisma/client';
 import bcrypt from 'bcryptjs';
 import { generateToken, dataToken } from '../config/jwtConfig';
-import { sendPasswordResetEmail } from '../services/emailService'
+import { sendActivationAccountEmail, sendPasswordResetEmail } from '../services/emailService'
 import { compareTokenHash, generateResetTokenHash } from '../services/utils';
 
 const validateEmail = (email: any) => {
@@ -186,9 +186,9 @@ export const resetPassword = async (req: Request, res: Response) => {
             });
 
             console.log("Enviando email de reset de senha . . .")
-            const emailSent = await sendPasswordResetEmail(email, token)
+            const emailResetPasswordSent = await sendPasswordResetEmail(email, token)
 
-            if (emailSent) {
+            if (emailResetPasswordSent) {
                 res.json({ message: 'Email de recuperação de senha enviado com sucesso' });
             } else {
                 res.status(500).json({ message: 'Falha ao enviar email de recuperação de senha' });
@@ -201,3 +201,17 @@ export const resetPassword = async (req: Request, res: Response) => {
         res.status(500).json({ message: 'Something goes wrong auth!' });
     }
 };
+
+export const sendEmailActivation = async (req: Request, res: Response) => {
+
+    try {
+
+
+
+        console.log("Enviando email de ativação de conta . . .")
+        const emailResetPasswordSent = await sendActivationAccountEmail(email, token)
+
+    } catch (error) {
+
+    }
+}
