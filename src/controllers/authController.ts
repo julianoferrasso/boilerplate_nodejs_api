@@ -21,14 +21,7 @@ export const signUp = async (req: Request, res: Response) => {
         } else {
             cpf = cpf_cnpj
         }
-        console.log(`tentando fazer registro com 
-            name "${name}", 
-            email "${email}", 
-            celular "${celular}, 
-            cpf "${cpf},
-            cnpj "${cnpj},
-            password "${password}"
-            `)
+        console.log(`tentando fazer registro com name "${name}", email "${email}", celular "${celular}, cpf "${cpf}, cnpj "${cnpj}, password "${password}"`)
 
         if (!email || !password) {
             return res.status(400).json({ error: 'Email e Senha requeridos' });
@@ -108,6 +101,29 @@ export const login = async (req: Request, res: Response) => {
     }
 };
 
+export const accountActivation = async (req: Request, res: Response) => {
+    await delay()
+    try {
+        let { email, token } = req.body
+        try {
+            if (!email || !token) {
+                return res.status(400).json({ message: 'Email ou Token não enviado' });
+            }
+            console.log("Enviando email de ativação de conta . . .")
+            const emailResetPasswordSent = await sendActivationAccountEmail(email, token)
+            if (emailResetPasswordSent) {
+                res.status(200).json({ message: "Email de ativação enviado com sucesso!" })
+            }
+            res.status(500).json({ message: "Ocorreu um erro ao enviar o email de ativação. por favor tente mais tarde" })
+        } catch (error) {
+            console.log("Erro no envio de email:", error)
+        }
+    } catch (error) {
+        console.log("Erro na função accountActivation:", error)
+        res.status(500).json({ message: "Ocorreu um erro ao enviar o email de ativação. por favor tente mais tarde" })
+    }
+}
+
 export const resetPassword = async (req: Request, res: Response) => {
     await delay()
     try {
@@ -127,7 +143,12 @@ export const resetPassword = async (req: Request, res: Response) => {
                 });
                 // Se nao encontra usuario
                 if (!userFind) {
-                    return res.status(400).json({ message: 'fail' });
+                    return res.status(400).json({ message: 'Email não cadastrado' });
+                }
+
+                // Verifique se o token não é nulo
+                if (!userFind.passwordResetHashToken || !userFind.passwordResetTokenExpires) {
+                    return res.status(400).json({ message: 'Token inválido' });
                 }
                 //Se data expirada
                 const now = new Date(Date.now() + 3600000)
@@ -202,16 +223,3 @@ export const resetPassword = async (req: Request, res: Response) => {
     }
 };
 
-export const sendEmailActivation = async (req: Request, res: Response) => {
-
-    try {
-
-
-
-        console.log("Enviando email de ativação de conta . . .")
-        const emailResetPasswordSent = await sendActivationAccountEmail(email, token)
-
-    } catch (error) {
-
-    }
-}
