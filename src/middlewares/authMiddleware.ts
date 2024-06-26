@@ -12,9 +12,8 @@ export const authMiddleware = async (req: AuthRequest, res: Response, next: Next
     const token = authHeader?.split(' ')[1];
 
     // console.log(`Passando pelo middleware com token: "${token}"`)
-
     if (!token) {
-        return res.status(401).json({ message: 'Access Denied' });
+        return res.status(401).json({ message: 'Accesso negado.' });
     }
 
     try {

@@ -8,5 +8,5 @@
 
 TODO:
 
-[] Tratar erros typescript
+[] rota para verifcar email
 

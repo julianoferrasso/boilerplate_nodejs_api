@@ -4,7 +4,6 @@ import mailtrapConfig from '../config/mailtrap'
 const transporter = nodemailer.createTransport(mailtrapConfig);
 
 export async function sendPasswordResetEmail(userEmail: string, resetToken: string) {
-
     // Construindo a URL com parâmetros
     const baseUrl = 'https://localhost:3000/activateAccount';
     const url = new URL(baseUrl);
@@ -22,7 +21,6 @@ export async function sendPasswordResetEmail(userEmail: string, resetToken: stri
 
     try {
         await transporter.sendMail(mailOptions);
-        console.log('Email de recuperação de senha enviado com sucesso');
         return true; // Indica que o email foi enviado com sucesso
     } catch (error) {
         console.error('Erro ao enviar email de recuperação de senha:', error);
@@ -31,7 +29,6 @@ export async function sendPasswordResetEmail(userEmail: string, resetToken: stri
 }
 
 export async function sendActivationAccountEmail(email: string, token: string) {
-
     // Construindo a URL com parâmetros
     const baseUrl = 'https://localhost:3000/activateAccount';
     const url = new URL(baseUrl);
@@ -49,7 +46,6 @@ export async function sendActivationAccountEmail(email: string, token: string) {
 
     try {
         await transporter.sendMail(mailOptions);
-        console.log('Email de ativação de conta enviado com sucesso');
         return true; // Indica que o email foi enviado com sucesso
     } catch (error) {
         console.error('Erro ao enviar email de ativação de conta:', error);
