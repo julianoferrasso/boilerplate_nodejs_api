@@ -4,7 +4,13 @@ import mailtrapConfig from '../config/mailtrap'
 const transporter = nodemailer.createTransport(mailtrapConfig);
 
 export async function sendPasswordResetEmail(userEmail: string, resetToken: string) {
-    const resetUrl = `https://adminplaces.com/resetPassword?token=${resetToken}&${userEmail}`;
+
+    // Construindo a URL com parâmetros
+    const baseUrl = 'https://localhost:3000/activateAccount';
+    const url = new URL(baseUrl);
+    url.searchParams.append('email', userEmail);
+    url.searchParams.append('token', resetToken);
+    const resetUrl = url.toString();
 
     const mailOptions = {
         from: 'no-reply@adminplaces.com',
@@ -25,7 +31,13 @@ export async function sendPasswordResetEmail(userEmail: string, resetToken: stri
 }
 
 export async function sendActivationAccountEmail(email: string, token: string) {
-    const activateAccountUrl = `https://adminplaces.com/activateAccount?token=${email}&${token}`;
+
+    // Construindo a URL com parâmetros
+    const baseUrl = 'https://localhost:3000/activateAccount';
+    const url = new URL(baseUrl);
+    url.searchParams.append('email', email);
+    url.searchParams.append('token', token);
+    const activateAccountUrl = url.toString();
 
     const mailOptions = {
         from: 'no-reply@adminplaces.com',

@@ -17,7 +17,8 @@ export const signUp = async (req: Request, res: Response) => {
     try {
         let { name, email, celular, cpf_cnpj, password } = req.body;
         let cpf, cnpj = null
-        if (cpf_cnpj > 14) {
+
+        if (cpf_cnpj && cpf_cnpj.lenght > 14) {
             cnpj = cpf_cnpj
         } else {
             cpf = cpf_cnpj
@@ -45,6 +46,8 @@ export const signUp = async (req: Request, res: Response) => {
                 }
             })
 
+            const tokenEmailVerifiedExpires = new Date(Date.now() + 3600000)
+
             // Cria usuario no Banco de Dados
             if (!userAlreadyExists) {
                 const user = await prisma.user.create({
@@ -55,11 +58,13 @@ export const signUp = async (req: Request, res: Response) => {
                         cnpj,
                         email,
                         tokenEmailVerified,
+                        tokenEmailVerifiedExpires,
                         password: hashedPassword,
+
                     },
                 });
 
-                const userCreated = { name, email, tokenEmailVerified }
+                const userCreated = { name, email }
 
                 console.log("user: ", user)
                 console.log("userCreated: ", userCreated)
@@ -67,8 +72,9 @@ export const signUp = async (req: Request, res: Response) => {
                 const emailResetPasswordSent = await sendActivationAccountEmail(email, tokenEmailVerified)
                 if (emailResetPasswordSent) {
                     res.status(201).json({ message: 'Usuario criado com sucesso', userCreated })
+                } else {
+                    res.status(201).json({ message: 'Usuario criado com sucesso, Mas não foi possivel enviar e-mail de ativação!', userCreated })
                 }
-
             } else {
                 res.status(409).json({ message: 'Email já cadastrado!' })
             }
@@ -120,12 +126,43 @@ export const login = async (req: Request, res: Response) => {
 export const resendEmailActivation = async (req: Request, res: Response) => {
     await delay()
     try {
-        let { email, tokenEmailVerified } = req.body
+        let { email } = req.body
         try {
-            if (!email || !tokenEmailVerified) {
-                return res.status(400).json({ message: 'Email ou Token não enviado' });
+            if (!email) {
+                return res.status(400).json({ message: 'Email inválido' });
             }
             console.log("Enviando email de ativação de conta . . .")
+
+            // procura usuario pelo email
+            const userByEmail = await prisma.user.findUnique({
+                where: {
+                    email
+                }
+            })
+
+            // se nao encontrar usuario return erro 404
+            if (!userByEmail) {
+                res.status(404).json({ message: "Email não encontrado!" })
+            }
+
+            // cria novo token
+            const tokenEmailVerified = uuidv4();
+
+            // atualiza token no Banco de Dados
+            await prisma.user.update({
+                where: { email },
+                data: { tokenEmailVerified, tokenEmailVerifiedExpires: new Date(Date.now() + 3600000) }, // Token expira em 1 hora
+            });
+
+            // logica para ativar email
+            // const tokenEmailVerified = userByEmail?.tokenEmailVerified
+            // const now = new Date(Date.now() + 3600000)
+            // console.log(`User.tokenEmailVerifiedExpires "${userByEmail.tokenEmailVerifiedExpires}"`)
+            // console.log(`now "${now}"`)
+            // if (userByEmail.tokenEmailVerifiedExpires < now) {
+            //     return res.status(400).json({ message: 'Token expirado' });
+            // }
+
             const emailResetPasswordSent = await sendActivationAccountEmail(email, tokenEmailVerified)
             if (emailResetPasswordSent) {
                 res.status(200).json({ message: "Email de ativação enviado com sucesso!" })
