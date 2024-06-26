@@ -296,8 +296,10 @@ export async function verifyEmail(req: Request, res: Response) {
         }
 
         // se token for igual e nao expirado, atualizar usuario tokenEmailVerified = true e retornar sucesso
-
-
+        await prisma.user.update({
+            where: { email },
+            data: { emailVerified: true },
+        });
 
         return res.status(200).json({ message: "Email verificado com sucesso" })
     } catch (error) {
