@@ -7,6 +7,6 @@ router.post('/signup', signUp);
 router.post('/login', login);
 router.post('/resetpassword', resetPassword);
 router.post('/resendemail', resendEmailActivation);
-router.get('/verifyemail', verifyEmail)
+router.post('/verifyemail', verifyEmail)
 
 export default router;

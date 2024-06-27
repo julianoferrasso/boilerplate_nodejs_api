@@ -102,19 +102,22 @@ export const login = async (req: Request, res: Response) => {
         email = email.toLowerCase()
 
         try {
-            const userFind = await prisma.user.findUnique({
+            const findUserByEmail = await prisma.user.findUnique({
                 where: { email },
             });
 
-            if (!userFind) {
-                return res.status(401).json({ message: 'User or Password incorrect' });
+            if (!findUserByEmail) {
+                return res.status(401).json({ message: 'Usuário ou senha incorreta' });
             }
-            const validPassword = await bcrypt.compare(password, userFind.password);
+            const validPassword = await bcrypt.compare(password, findUserByEmail.password);
             if (!validPassword) {
-                return res.status(401).json({ message: 'User or Password incorrect' });
+                return res.status(401).json({ message: 'Usuário ou senha incorreta' });
             }
-            const token = await generateToken({ email: userFind.email, id: userFind.id } as dataToken);
-            const user = { id: userFind.id, name: userFind.name, email: userFind.email, avatarurl: userFind.avatarUrl };
+            if (!findUserByEmail.emailVerified) {
+                return res.status(401).json({ message: 'Email não verificado' });
+            }
+            const token = await generateToken({ email: findUserByEmail.email, id: findUserByEmail.id } as dataToken);
+            const user = { id: findUserByEmail.id, name: findUserByEmail.name, email: findUserByEmail.email, avatarurl: findUserByEmail.avatarUrl };
             res.json({ token, user });
         } catch (error) {
             res.status(400).json({ message: 'Estamos enfrentando um problema no servidor. Por favor tente mais tarde. Codigo[BD-2]' });
@@ -131,7 +134,6 @@ export const resendEmailActivation = async (req: Request, res: Response) => {
             if (!email) {
                 return res.status(400).json({ message: 'Email inválido' });
             }
-            console.log("Enviando email de ativação de conta . . .")
 
             // procura usuario pelo email
             const userByEmail = await prisma.user.findUnique({
@@ -154,20 +156,12 @@ export const resendEmailActivation = async (req: Request, res: Response) => {
                 data: { tokenEmailVerified, tokenEmailVerifiedExpires: new Date(Date.now() + 3600000) }, // Token expira em 1 hora
             });
 
-            // logica para ativar email
-            // const tokenEmailVerified = userByEmail?.tokenEmailVerified
-            // const now = new Date(Date.now() + 3600000)
-            // console.log(`User.tokenEmailVerifiedExpires "${userByEmail.tokenEmailVerifiedExpires}"`)
-            // console.log(`now "${now}"`)
-            // if (userByEmail.tokenEmailVerifiedExpires < now) {
-            //     return res.status(400).json({ message: 'Token expirado' });
-            // }
-
             const emailResetPasswordSent = await sendActivationAccountEmail(email, tokenEmailVerified)
             if (emailResetPasswordSent) {
                 res.status(200).json({ message: "Email de ativação enviado com sucesso!" })
+            } else {
+                res.status(500).json({ message: "Ocorreu um erro ao enviar o email de ativação. por favor tente mais tarde" })
             }
-            res.status(500).json({ message: "Ocorreu um erro ao enviar o email de ativação. por favor tente mais tarde" })
         } catch (error) {
             console.log("Erro no envio de email:", error)
             res.status(500).json({ message: "Estamos enfrentando um problema no servidor. Por favor tente mais tarde. Codigo[BD-4]" })
@@ -191,28 +185,26 @@ export const resetPassword = async (req: Request, res: Response) => {
         if (email && token && password) {
             email = email.toLowerCase()
             try {
-                const userFind = await prisma.user.findUnique({
+                const findUserByEmail = await prisma.user.findUnique({
                     where: { email },
                 });
                 // Se nao encontra usuario
-                if (!userFind) {
+                if (!findUserByEmail) {
                     return res.status(400).json({ message: 'Email não cadastrado' });
                 }
 
                 // Verifique se o token não é nulo
-                if (!userFind.passwordResetHashToken || !userFind.passwordResetTokenExpires) {
+                if (!findUserByEmail.passwordResetHashToken || !findUserByEmail.passwordResetTokenExpires) {
                     return res.status(400).json({ message: 'Token inválido' });
                 }
                 //Se data expirada
-                const now = new Date(Date.now() + 3600000)
-                console.log(`User.passwordResetTokenExpires "${userFind.passwordResetTokenExpires}"`)
-                console.log(`now "${now}"`)
-                if (userFind.passwordResetTokenExpires < now) {
+                const now = new Date(Date.now())
+                if (findUserByEmail.passwordResetTokenExpires < now) {
                     return res.status(400).json({ message: 'token expirado' });
                 }
                 // Se hash nao coincidir com token
-                console.log(`User.passwordResetTokenExpires "${userFind.passwordResetHashToken}"`)
-                const result = await compareTokenHash(token, userFind.passwordResetHashToken)
+                console.log(`User.passwordResetTokenExpires "${findUserByEmail.passwordResetHashToken}"`)
+                const result = await compareTokenHash(token, findUserByEmail.passwordResetHashToken)
                 console.log(`Result "${result}"`)
                 if (!result) {
                     return res.status(400).json({ message: 'token inválido' });
@@ -278,20 +270,25 @@ export async function verifyEmail(req: Request, res: Response) {
         const { email, token } = req.body
 
         // buscar usuario no BD pelo email
-        const userFind = await prisma.user.findUnique({
+        const findUserByEmail = await prisma.user.findUnique({
             where: { email },
         });
 
+        // se nao encontrar email
+        if (!findUserByEmail) {
+            return res.status(404).json({ message: "Email não cadastrado" })
+        }
+
         // comparar se token do BD é igual ao token recebido na req, senao retorna erro
-        const { tokenEmailVerified, tokenEmailVerifiedExpires } = userFind
+        const { tokenEmailVerified, tokenEmailVerifiedExpires } = findUserByEmail
 
         if (tokenEmailVerified != token) {
             return res.status(401).json({ message: "Token inválido" })
         }
 
         // verificar se tokenEmailVerifiedExpires é < que agora senao retorna erro
-        const now = new Date(Date.now() + 3600000)
-        if (tokenEmailVerifiedExpires < now) {
+        const now = new Date(Date.now())
+        if (tokenEmailVerifiedExpires && tokenEmailVerifiedExpires < now) {
             return res.status(401).json({ message: "Token expirado" })
         }
 
