@@ -193,6 +193,8 @@ export const resetPassword = async (req: Request, res: Response) => {
                     return res.status(400).json({ message: 'Email não cadastrado' });
                 }
 
+                console.log("token e exp", findUserByEmail.passwordResetHashToken, findUserByEmail.passwordResetTokenExpires)
+
                 // Verifique se o token não é nulo
                 if (!findUserByEmail.passwordResetHashToken || !findUserByEmail.passwordResetTokenExpires) {
                     return res.status(400).json({ message: 'Token inválido' });
@@ -229,9 +231,7 @@ export const resetPassword = async (req: Request, res: Response) => {
         if (!email) {
             return res.status(400).json({ message: 'Email requerido' });
         }
-
         email = email.toLowerCase()
-
         try {
             const userFind = await prisma.user.findUnique({
                 where: { email },
