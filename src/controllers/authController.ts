@@ -193,7 +193,7 @@ export const resetPassword = async (req: Request, res: Response) => {
                     return res.status(400).json({ message: 'Email não cadastrado' });
                 }
 
-                console.log("token e exp", findUserByEmail.passwordResetHashToken, findUserByEmail.passwordResetTokenExpires)
+                console.log("token e expg", findUserByEmail.passwordResetHashToken, findUserByEmail.passwordResetTokenExpires)
 
                 // Verifique se o token não é nulo
                 if (!findUserByEmail.passwordResetHashToken || !findUserByEmail.passwordResetTokenExpires) {
