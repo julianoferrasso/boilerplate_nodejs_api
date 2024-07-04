@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { NextFunction } from 'express';
 import cors from 'cors';
 import authRoutes from './routes/authRoutes';
 import userRoutes from './routes/userRoutes';
@@ -17,5 +17,15 @@ app.use(express.json());
 app.use(cors(corsOptions));
 app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
+
+
+
+// app.use(
+//     (error: Error, req: Request, res: Response, next: NextFunction) => {
+//     return res.json({
+//         status: "Error",
+//         message: error.message
+//     })
+// })
 
 export default app;

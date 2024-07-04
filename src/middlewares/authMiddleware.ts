@@ -11,9 +11,8 @@ export const authMiddleware = async (req: AuthRequest, res: Response, next: Next
     const authHeader = req.headers['authorization'];
     const token = authHeader?.split(' ')[1];
 
-    // console.log(`Passando pelo middleware com token: "${token}"`)
     if (!token) {
-        return res.status(401).json({ message: 'Accesso negado.' });
+        return res.status(401).json({ message: 'Token ausente.' });
     }
 
     try {
@@ -21,6 +20,6 @@ export const authMiddleware = async (req: AuthRequest, res: Response, next: Next
         req.token = dataTokenVerified;
         next();
     } catch (error) {
-        res.status(400).json({ message: `Invalid Token toque|${token}|` });
+        res.status(401).json({ message: `Token inválido.` });
     }
 };

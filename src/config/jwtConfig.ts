@@ -7,7 +7,8 @@ export interface dataToken extends jwt.JwtPayload {
 
 export const generateToken = async ({ id, email }: dataToken): Promise<string | null> => {
     try {
-        return jwt.sign({ id: id, email: email }, process.env.JWT_SECRET as string, {
+        return jwt.sign({ id, email }, process.env.JWT_SECRET as string, {
+            subject: id,
             expiresIn: '48h',
         });
     } catch (error) {
