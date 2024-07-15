@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import prisma from '../prisma/client';
 import jwt from 'jsonwebtoken';
 import { dataToken } from '../config/jwtConfig'
@@ -9,9 +9,13 @@ export const getUserProfile = async (req: AuthRequest, res: Response) => {
         const authHeader = req.headers['authorization'];
         const token = authHeader?.split(' ')[1];
 
-        // console.log(`tentando buscar getUser com  token "${token}"`)
+        if (!token) {
+            return res.status(401).json({ message: 'Token is missing' });
+        }
 
-        const dataTokenVerified = jwt.verify(token, process.env.JWT_SECRET as string);
+        console.log(`tentando buscar getUser com  token "${token}"`)
+
+        const dataTokenVerified = jwt.verify(token, process.env.JWT_SECRET as string) as { id: string };
         const { id } = dataTokenVerified
 
         try {
@@ -31,10 +35,10 @@ export const getUserProfile = async (req: AuthRequest, res: Response) => {
             };
             res.status(200).json(user);
         } catch (error) {
-            res.status(400).json({ message: 'Something went wrong BD user' });
+            res.status(400).json({ message: 'Something went wrong with the database query' });
         }
 
     } catch {
-        res.status(400).json({ message: 'Something went wrong Request user' });
+        res.status(400).json({ message: 'Something went wrong with the request' });
     }
 };
