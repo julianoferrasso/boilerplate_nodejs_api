@@ -45,7 +45,13 @@ export async function sendActivationAccountEmail(email: string, token: string) {
     };
 
     try {
-        await transporter.sendMail(mailOptions);
+        await transporter.sendMail(mailOptions, (error, info) => {
+            if (error) {
+                console.error('Erro ao enviar email:', error);
+                return;
+            }
+            console.log('Email enviado:', info.response);
+        });
         return true; // Indica que o email foi enviado com sucesso
     } catch (error) {
         console.error('Erro ao enviar email de ativação de conta:', error);

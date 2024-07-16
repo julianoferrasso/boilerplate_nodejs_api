@@ -71,8 +71,9 @@ export const signUp = async (req: Request, res: Response) => {
                 const userCreated = { name, email }
 
                 // envia email de ativação de conta
-                const emailResetPasswordSent = await sendActivationAccountEmail(email, tokenEmailVerified)
-                if (emailResetPasswordSent) {
+                const emailActivationAccunt = await sendActivationAccountEmail(email, tokenEmailVerified)
+                console.log(emailActivationAccunt)
+                if (emailActivationAccunt) {
                     res.status(201).json({ message: 'Usuario criado com sucesso', userCreated })
                 } else {
                     res.status(201).json({ message: 'Usuario criado com sucesso, Mas não foi possivel enviar e-mail de ativação!', userCreated })
