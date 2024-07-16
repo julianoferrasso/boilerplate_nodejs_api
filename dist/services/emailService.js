@@ -19,7 +19,7 @@ const transporter = nodemailer_1.default.createTransport(mailtrap_1.default);
 function sendPasswordResetEmail(userEmail, resetToken) {
     return __awaiter(this, void 0, void 0, function* () {
         // Construindo a URL com parâmetros
-        const baseUrl = 'https://localhost:3000/activateAccount';
+        const baseUrl = 'https://wejobi.com/resetPassword';
         const url = new URL(baseUrl);
         url.searchParams.append('email', userEmail);
         url.searchParams.append('token', resetToken);
@@ -45,7 +45,7 @@ exports.sendPasswordResetEmail = sendPasswordResetEmail;
 function sendActivationAccountEmail(email, token) {
     return __awaiter(this, void 0, void 0, function* () {
         // Construindo a URL com parâmetros
-        const baseUrl = 'https://localhost:3000/activateAccount';
+        const baseUrl = 'https://wejobi.com/activateAccount';
         const url = new URL(baseUrl);
         url.searchParams.append('email', email);
         url.searchParams.append('token', token);
@@ -53,9 +53,9 @@ function sendActivationAccountEmail(email, token) {
         const mailOptions = {
             from: 'no-reply@adminplaces.com',
             to: email,
-            subject: 'Recuperação de Senha',
+            subject: 'Ativação de Conta',
             html: `<h1>Ativação de conta</h1><br /><p>Bem vindo ao Admin Places. Clique no link abaixo para ativar sua conta:</p>
-           <a href="${activateAccountUrl}">Resetar Senha</a>`
+           <a href="${activateAccountUrl}">Ative sua Conta</a>`
         };
         try {
             yield transporter.sendMail(mailOptions);

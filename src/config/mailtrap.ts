@@ -6,3 +6,4 @@ export default {
         pass: process.env.MAILTRAP_PASS as string,
     },
 };
+

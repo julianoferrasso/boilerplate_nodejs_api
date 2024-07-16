@@ -7,8 +7,11 @@ const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const authRoutes_1 = __importDefault(require("./routes/authRoutes"));
 const userRoutes_1 = __importDefault(require("./routes/userRoutes"));
+const path_1 = __importDefault(require("path"));
 const dotenv_1 = __importDefault(require("dotenv"));
-dotenv_1.default.config();
+//dotenv.config();
+// Carrega o arquivo .env localizado na raiz do projeto
+dotenv_1.default.config({ path: path_1.default.resolve(__dirname, '../.env') });
 const corsOptions = {
     // origin: 'https://seu-dominio-nextjs.com', // Limita as requisições pelo domínio da sua aplicação Next.js
     optionsSuccessStatus: 200

@@ -75,8 +75,9 @@ const signUp = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
                 // necessario email para funcao de reenviar email caso usuario não receba 
                 const userCreated = { name, email };
                 // envia email de ativação de conta
-                const emailResetPasswordSent = yield (0, emailService_1.sendActivationAccountEmail)(email, tokenEmailVerified);
-                if (emailResetPasswordSent) {
+                const emailActivationAccunt = yield (0, emailService_1.sendActivationAccountEmail)(email, tokenEmailVerified);
+                console.log(emailActivationAccunt);
+                if (emailActivationAccunt) {
                     res.status(201).json({ message: 'Usuario criado com sucesso', userCreated });
                 }
                 else {
