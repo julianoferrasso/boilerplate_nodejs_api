@@ -5,7 +5,7 @@ const transporter = nodemailer.createTransport(mailtrapConfig);
 
 export async function sendPasswordResetEmail(userEmail: string, resetToken: string) {
     // Construindo a URL com parâmetros
-    const baseUrl = 'https://localhost:3000/activateAccount';
+    const baseUrl = 'https://wejobi.com/resetPassword';
     const url = new URL(baseUrl);
     url.searchParams.append('email', userEmail);
     url.searchParams.append('token', resetToken);
@@ -30,7 +30,7 @@ export async function sendPasswordResetEmail(userEmail: string, resetToken: stri
 
 export async function sendActivationAccountEmail(email: string, token: string) {
     // Construindo a URL com parâmetros
-    const baseUrl = 'https://localhost:3000/activateAccount';
+    const baseUrl = 'https://wejobi.com/activateAccount';
     const url = new URL(baseUrl);
     url.searchParams.append('email', email);
     url.searchParams.append('token', token);
@@ -39,19 +39,13 @@ export async function sendActivationAccountEmail(email: string, token: string) {
     const mailOptions = {
         from: 'no-reply@adminplaces.com',
         to: email,
-        subject: 'Recuperação de Senha',
+        subject: 'Ativação de Conta',
         html: `<h1>Ativação de conta</h1><br /><p>Bem vindo ao Admin Places. Clique no link abaixo para ativar sua conta:</p>
-           <a href="${activateAccountUrl}">Resetar Senha</a>`
+           <a href="${activateAccountUrl}">Ative sua Conta</a>`
     };
 
     try {
-        await transporter.sendMail(mailOptions, (error, info) => {
-            if (error) {
-                console.error('Erro ao enviar email:', error);
-                return;
-            }
-            console.log('Email enviado:', info.response);
-        });
+        await transporter.sendMail(mailOptions);
         return true; // Indica que o email foi enviado com sucesso
     } catch (error) {
         console.error('Erro ao enviar email de ativação de conta:', error);
