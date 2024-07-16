@@ -72,7 +72,6 @@ export const signUp = async (req: Request, res: Response) => {
 
                 // envia email de ativação de conta
                 const emailActivationAccunt = await sendActivationAccountEmail(email, tokenEmailVerified)
-                console.log(emailActivationAccunt)
                 if (emailActivationAccunt) {
                     res.status(201).json({ message: 'Usuario criado com sucesso', userCreated })
                 } else {
