@@ -117,7 +117,7 @@ export const login = async (req: Request, res: Response) => {
                 return res.status(401).json({ message: 'Email não verificado' });
             }
             const token = await generateToken({ email: findUserByEmail.email, id: findUserByEmail.id } as dataToken);
-            const user = { id: findUserByEmail.id, name: findUserByEmail.name, email: findUserByEmail.email, avatarurl: findUserByEmail.avatarUrl };
+            const user = { id: findUserByEmail.id, name: findUserByEmail.name, email: findUserByEmail.email, avatarUrl: findUserByEmail.avatarUrl };
             res.json({ token, user });
         } catch (error) {
             res.status(400).json({ message: 'Estamos enfrentando um problema no servidor. Por favor tente mais tarde. Codigo[BD-2]' });
