@@ -186,9 +186,15 @@ export const resetPassword = async (req: Request, res: Response) => {
 
         console.log(`tentando recuperar senha com email "${email}"`)
         console.log(`tentando recuperar senha com token "${token}"`)
+        console.log(`tentando recuperar senha com password "${password}"`)
+
+        if (!email) {
+            return res.status(400).json({ message: 'Email requerido' });
+        }
 
         // Se tiver os 3 campos então reseta senha
         if (email && token && password) {
+            console.log(`Entrou no IF para alterar a senha "${password}"`)
             email = email.toLowerCase()
             try {
                 const findUserByEmail = await prisma.user.findUnique({
@@ -198,9 +204,7 @@ export const resetPassword = async (req: Request, res: Response) => {
                 if (!findUserByEmail) {
                     return res.status(400).json({ message: 'Email não cadastrado' });
                 }
-
-                console.log("token e expg", findUserByEmail.passwordResetHashToken, findUserByEmail.passwordResetTokenExpires)
-
+                console.log("token e exp", findUserByEmail.passwordResetHashToken, findUserByEmail.passwordResetTokenExpires)
                 // Verifique se o token não é nulo
                 if (!findUserByEmail.passwordResetHashToken || !findUserByEmail.passwordResetTokenExpires) {
                     return res.status(400).json({ message: 'Token inválido' });
@@ -208,16 +212,15 @@ export const resetPassword = async (req: Request, res: Response) => {
                 //Se data expirada
                 const now = new Date(Date.now())
                 if (findUserByEmail.passwordResetTokenExpires < now) {
-                    return res.status(400).json({ message: 'token expirado' });
+                    return res.status(400).json({ message: 'Token expirado' });
                 }
                 // Se hash nao coincidir com token
                 console.log(`User.passwordResetTokenExpires "${findUserByEmail.passwordResetHashToken}"`)
                 const result = await compareTokenHash(token, findUserByEmail.passwordResetHashToken)
                 console.log(`Result "${result}"`)
                 if (!result) {
-                    return res.status(400).json({ message: 'token inválido' });
+                    return res.status(400).json({ message: 'Token inválido' });
                 }
-
                 if (result) {
                     // Faz o hash do password
                     const salt = await bcrypt.genSalt(10);
@@ -234,9 +237,7 @@ export const resetPassword = async (req: Request, res: Response) => {
             }
         }
 
-        if (!email) {
-            return res.status(400).json({ message: 'Email requerido' });
-        }
+        // se na requisição não conter token e nova senha então gera email para recuperação de senha
         email = email.toLowerCase()
         try {
             const userFind = await prisma.user.findUnique({
