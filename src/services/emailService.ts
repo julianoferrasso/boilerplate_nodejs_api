@@ -30,7 +30,7 @@ export async function sendPasswordResetEmail(userEmail: string, resetToken: stri
 
 export async function sendActivationAccountEmail(email: string, token: string) {
     // Construindo a URL com parâmetros
-    const baseUrl = 'https://wejobi.com/activateAccount';
+    const baseUrl = 'https://wejobi.com/activateEmail';
     const url = new URL(baseUrl);
     url.searchParams.append('email', email);
     url.searchParams.append('token', token);

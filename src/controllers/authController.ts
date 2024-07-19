@@ -276,6 +276,8 @@ export async function verifyEmail(req: Request, res: Response) {
     try {
         const { email, token } = req.body
 
+        console.log("Verificando email com token: ", email, token)
+
         // buscar usuario no BD pelo email
         const findUserByEmail = await prisma.user.findUnique({
             where: { email },
