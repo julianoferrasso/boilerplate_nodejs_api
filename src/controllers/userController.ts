@@ -30,6 +30,7 @@ export const getUserProfile = async (req: AuthRequest, res: Response) => {
                 id: userFind.id,
                 name: userFind.name,
                 email: userFind.email,
+                celular: userFind.celular,
                 avatarUrl: userFind.avatarUrl,
                 emailVerified: userFind.emailVerified
             };
