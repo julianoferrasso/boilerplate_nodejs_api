@@ -3,7 +3,7 @@ import prisma from '../prisma/client';
 import bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
 import { generateToken, dataToken } from '../config/jwtConfig';
-import { sendActivationAccountEmail, sendPasswordResetEmail } from '../services/emailService'
+import { sendActivationAccountEmail, sendPasswordResetEmail } from '../services/emailAWS'
 import { compareTokenHash, generateResetTokenHash } from '../services/utils';
 
 // funcao para validar email
