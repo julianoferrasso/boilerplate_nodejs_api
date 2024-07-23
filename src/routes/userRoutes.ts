@@ -5,6 +5,6 @@ import { authMiddleware } from '../middlewares/authMiddleware';
 const router = Router();
 
 router.get('/profile', authMiddleware, getUserProfile);
-router.post('/updateProfilePicture', authMiddleware, updateProfilePicture);
+router.put('/updateProfilePicture', authMiddleware, updateProfilePicture);
 
 export default router;
