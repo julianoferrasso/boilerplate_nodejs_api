@@ -43,3 +43,12 @@ export const getUserProfile = async (req: AuthRequest, res: Response) => {
         res.status(400).json({ message: 'Something went wrong with the request' });
     }
 };
+
+export async function updateProfilePicture(req: AuthRequest, res: Response) {
+    try {
+        console.log(req)
+        res.status(204).send();
+    } catch (error) {
+        console.log(error)
+    }
+}
