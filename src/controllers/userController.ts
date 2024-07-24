@@ -1,8 +1,31 @@
 import { Response } from 'express';
 import prisma from '../prisma/client';
 import jwt from 'jsonwebtoken';
-import { dataToken } from '../config/jwtConfig'
 import { AuthRequest } from '../middlewares/authMiddleware';
+
+
+export async function updateProfilePicture(req: AuthRequest, res: Response) {
+    try {
+        if (req.file) {
+            // Logica para atualizar a foto de perfil do usuário no banco de dados
+            //const userId = req.user.id; // Assumindo que `req.user` contém as informações do usuário autenticado
+            const filePath = req.file.path;
+
+            console.log("filePath - ", filePath)
+
+            // await prisma.user.update({
+            //     where: { id: userId },
+            //     data: { profilePicture: filePath }
+            // });
+
+            console.log("Tratando upload")
+            res.status(204).send();
+        }
+    } catch (error) {
+        console.log("algo deu errado")
+        console.log(error)
+    }
+}
 
 export const getUserProfile = async (req: AuthRequest, res: Response) => {
     try {
@@ -44,11 +67,3 @@ export const getUserProfile = async (req: AuthRequest, res: Response) => {
     }
 };
 
-export async function updateProfilePicture(req: AuthRequest, res: Response) {
-    try {
-        console.log(req)
-        res.status(204).send();
-    } catch (error) {
-        console.log(error)
-    }
-}

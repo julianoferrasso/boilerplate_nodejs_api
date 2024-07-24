@@ -14,19 +14,25 @@ const storage = multer.diskStorage({
     }
 });
 
-const fileFilter = (req, file, cb) => {
+// Filtro de tipos de arquivos e verificação de tamanho
+const fileFilter = (req: any, file: any, cb: any) => {
     const filetypes = /jpeg|jpg|png/;
     const mimetype = filetypes.test(file.mimetype);
     const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
 
     if (mimetype && extname) {
-        return cb(null, true);
+        if (file.size > 5 * 1024 * 1024) { // Verificação de tamanho de arquivo
+            return cb(new Error('Imagem deve ser menor que 5Mb'), false);
+        } else {
+            return cb(null, true);
+        }
     } else {
-        cb("Error: File upload only supports the following filetypes - " + filetypes);
+        return cb(new Error('Extensao nao permitida. Use: ' + filetypes), false);
     }
 };
 
 export default {
-    directory: tmpFolder
-
+    directory: tmpFolder,
+    storage: storage,
+    fileFilter: fileFilter,
 }

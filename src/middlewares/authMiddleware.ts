@@ -23,3 +23,4 @@ export const authMiddleware = async (req: AuthRequest, res: Response, next: Next
         res.status(401).json({ message: `Token inválido.` });
     }
 };
+
