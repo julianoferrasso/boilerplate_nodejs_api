@@ -2,21 +2,31 @@ import { Response } from 'express';
 import prisma from '../prisma/client';
 import jwt from 'jsonwebtoken';
 import { AuthRequest } from '../middlewares/authMiddleware';
+import { updateProfilePictureS3 } from '../services/serviceS3AWS'
+import fs from 'fs';
 
-
+// pegar id ou email do usuario na request para upload da foto
+// atualizar a url da foto do usuario no prisma
+// estudar como usar a url da foto, se temporaria ou proteger com permissoes
 export async function updateProfilePicture(req: AuthRequest, res: Response) {
     try {
         if (req.file) {
-            // Logica para atualizar a foto de perfil do usuário no banco de dados
-            //const userId = req.user.id; // Assumindo que `req.user` contém as informações do usuário autenticado
             const filePath = req.file.path;
+            const fileName = req.file.filename;
 
-            console.log("filePath - ", filePath)
+            await updateProfilePictureS3(filePath, fileName);
+
+            // Gera o URL permanente do objeto no S3
+            const fileUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`;
 
             // await prisma.user.update({
             //     where: { id: userId },
             //     data: { profilePicture: filePath }
             // });
+
+            // Remover o arquivo local após o upload
+            fs.unlinkSync(filePath);
+
 
             console.log("Tratando upload")
             res.status(204).send();
