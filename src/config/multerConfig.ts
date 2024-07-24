@@ -36,3 +36,4 @@ export default {
     storage: storage,
     fileFilter: fileFilter,
 }
+

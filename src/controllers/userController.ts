@@ -5,11 +5,14 @@ import { AuthRequest } from '../middlewares/authMiddleware';
 import { updateProfilePictureS3 } from '../services/serviceS3AWS'
 import fs from 'fs';
 
-// pegar id ou email do usuario na request para upload da foto
+// pegar id do usuario na request para upload da foto
 // atualizar a url da foto do usuario no prisma
 // estudar como usar a url da foto, se temporaria ou proteger com permissoes
+
 export async function updateProfilePicture(req: AuthRequest, res: Response) {
     try {
+        const userId = req.body.userId;
+        console.log("recebeu req. de update profilePicture do userId: ", userId)
         if (req.file) {
             const filePath = req.file.path;
             const fileName = req.file.filename;
@@ -24,9 +27,9 @@ export async function updateProfilePicture(req: AuthRequest, res: Response) {
             //     data: { profilePicture: filePath }
             // });
 
+
             // Remover o arquivo local após o upload
             fs.unlinkSync(filePath);
-
 
             console.log("Tratando upload")
             res.status(204).send();
