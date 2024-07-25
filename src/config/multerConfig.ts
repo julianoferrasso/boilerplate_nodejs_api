@@ -1,15 +1,16 @@
 import multer from 'multer'
 import path from 'path'
-import crypto from 'crypto'
+import { v4 as uuid } from 'uuid'
 
 const tmpFolder = path.resolve(__dirname, '..', 'tmp')
 
-// Configurar armazenamento do multer
+// Configurar armazenamento do multer e nome do arquivo
 const storage = multer.diskStorage({
     destination: tmpFolder,
     filename: function (req: any, file: any, callback: any) {
-        const fileHash = crypto.randomBytes(10).toString('hex')
-        const filename = `${fileHash}-${file.originalname}`
+        const extension = file.originalname.substring(file.originalname.lastIndexOf('.'));
+        const uuidName = uuid()
+        const filename = `${uuidName}${extension}`
         return callback(null, filename)
     }
 });
@@ -21,19 +22,21 @@ const fileFilter = (req: any, file: any, cb: any) => {
     const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
 
     if (mimetype && extname) {
-        if (file.size > 5 * 1024 * 1024) { // Verificação de tamanho de arquivo
-            return cb(new Error('Imagem deve ser menor que 5Mb'), false);
-        } else {
-            return cb(null, true);
-        }
+        return cb(null, true);
     } else {
         return cb(new Error('Extensao nao permitida. Use: ' + filetypes), false);
     }
+};
+
+// Verificação de tamanho de arquivo
+const limits = {
+    fileSize: 5 * 1024 * 1024 // 5 MB
 };
 
 export default {
     directory: tmpFolder,
     storage: storage,
     fileFilter: fileFilter,
+    limits: limits,
 }
 

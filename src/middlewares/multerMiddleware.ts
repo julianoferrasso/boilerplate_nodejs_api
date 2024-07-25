@@ -4,7 +4,6 @@ import multerConfig from '../config/multerConfig'
 
 export async function multerUploadProfilePictureMiddleware(req: Request, res: Response, next: NextFunction) {
     let uploadProfilePicture;
-
     try {
         uploadProfilePicture = multer(multerConfig).single('profilePicture');
     } catch (error) {
@@ -15,6 +14,10 @@ export async function multerUploadProfilePictureMiddleware(req: Request, res: Re
     uploadProfilePicture(req, res, (error) => {
         if (error instanceof multer.MulterError) {
             // A Multer error occurred when uploading.
+            if (error.message == "File too large") {
+                return res.status(400).json({ message: "Arquivo maior que 5Mb" });
+            }
+
             console.error("Erro no multer: ", error.message);
             return res.status(500).json({ message: "Erro no servidor, tente mais tarde." });
         } else if (error) {

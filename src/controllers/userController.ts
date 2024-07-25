@@ -2,37 +2,47 @@ import { Response } from 'express';
 import prisma from '../prisma/client';
 import jwt from 'jsonwebtoken';
 import { AuthRequest } from '../middlewares/authMiddleware';
-import { updateProfilePictureS3 } from '../services/serviceS3AWS'
+import { updateProfilePictureS3, getTemporaryUrl } from '../services/serviceS3AWS'
 import fs from 'fs';
+import crypto from 'crypto';
 
-// pegar id do usuario na request para upload da foto
 // atualizar a url da foto do usuario no prisma
 // estudar como usar a url da foto, se temporaria ou proteger com permissoes
+
+// Função para criar um hash SHA-256 a partir do userId
+async function hashUserId(userId: string) {
+    const hash = crypto.createHash('sha256');
+    hash.update(userId);
+    return hash.digest('hex');
+}
 
 export async function updateProfilePicture(req: AuthRequest, res: Response) {
     try {
         const userId = req.body.userId;
-        console.log("recebeu req. de update profilePicture do userId: ", userId)
+        const fileFolder = 'profileAvatars'
+        // desativado hash do userId
+        // const hashedUserId = await hashUserId(userId);
+
         if (req.file) {
             const filePath = req.file.path;
+            // trata nome do arquivo
             const fileName = req.file.filename;
 
-            await updateProfilePictureS3(filePath, fileName);
+            // atualiza avatar no S3
+            await updateProfilePictureS3(filePath, fileFolder, fileName);
 
-            // Gera o URL permanente do objeto no S3
-            const fileUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`;
+            // Gera o URL temporaria do objeto no S3
+            const fileUrl = await getTemporaryUrl(`${fileFolder}/${fileName}`);
 
-            // await prisma.user.update({
-            //     where: { id: userId },
-            //     data: { profilePicture: filePath }
-            // });
-
+            await prisma.user.update({
+                where: { id: userId },
+                data: { avatarUrl: fileUrl }
+            });
 
             // Remover o arquivo local após o upload
             fs.unlinkSync(filePath);
 
-            console.log("Tratando upload")
-            res.status(204).send();
+            res.status(200).json({ avatarUrl: fileUrl });
         }
     } catch (error) {
         console.log("algo deu errado")
