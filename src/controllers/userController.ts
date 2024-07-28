@@ -5,6 +5,7 @@ import { AuthRequest } from '../middlewares/authMiddleware';
 import { updateProfilePictureS3, getTemporaryUrl } from '../services/serviceS3AWS'
 import fs from 'fs';
 import crypto from 'crypto';
+import { dataToken } from '../config/jwtConfig';
 
 // atualizar a url da foto do usuario no prisma
 // estudar como usar a url da foto, se temporaria ou proteger com permissoes
@@ -18,31 +19,32 @@ async function hashUserId(userId: string) {
 
 export async function updateProfilePicture(req: AuthRequest, res: Response) {
     try {
-        const userId = req.body.userId;
-        const fileFolder = 'profileAvatars'
-        // desativado hash do userId
-        // const hashedUserId = await hashUserId(userId);
+        if (req?.token?.id) {
+            const userId = req?.token?.id
+            const fileFolder = 'profileAvatars'
+            // desativado hash do userId
+            // const hashedUserId = await hashUserId(userId);
+            if (req.file) {
+                const filePath = req.file.path;
+                // trata nome do arquivo
+                const fileName = req.file.filename;
 
-        if (req.file) {
-            const filePath = req.file.path;
-            // trata nome do arquivo
-            const fileName = req.file.filename;
+                // atualiza avatar no S3
+                await updateProfilePictureS3(filePath, fileFolder, fileName);
 
-            // atualiza avatar no S3
-            await updateProfilePictureS3(filePath, fileFolder, fileName);
+                // Gera o URL temporaria do objeto no S3
+                const fileUrl = await getTemporaryUrl(`${fileFolder}/${fileName}`);
 
-            // Gera o URL temporaria do objeto no S3
-            const fileUrl = await getTemporaryUrl(`${fileFolder}/${fileName}`);
+                await prisma.user.update({
+                    where: { id: userId },
+                    data: { avatarUrl: fileUrl }
+                });
 
-            await prisma.user.update({
-                where: { id: userId },
-                data: { avatarUrl: fileUrl }
-            });
+                // Remover o arquivo local após o upload
+                fs.unlinkSync(filePath);
 
-            // Remover o arquivo local após o upload
-            fs.unlinkSync(filePath);
-
-            res.status(200).json({ avatarUrl: fileUrl });
+                res.status(200).json({ avatarUrl: fileUrl });
+            }
         }
     } catch (error) {
         console.log("algo deu errado")
@@ -52,19 +54,8 @@ export async function updateProfilePicture(req: AuthRequest, res: Response) {
 
 export const getUserProfile = async (req: AuthRequest, res: Response) => {
     try {
-        const authHeader = req.headers['authorization'];
-        const token = authHeader?.split(' ')[1];
-
-        if (!token) {
-            return res.status(401).json({ message: 'Token is missing' });
-        }
-
-        console.log(`tentando buscar getUser com  token "${token}"`)
-
-        const dataTokenVerified = jwt.verify(token, process.env.JWT_SECRET as string) as { id: string };
-        const { id } = dataTokenVerified
-
-        try {
+        const id = req?.token?.id
+        if (id) {
             const userFind = await prisma.user.findUnique({
                 where: { id },
             });
@@ -81,8 +72,6 @@ export const getUserProfile = async (req: AuthRequest, res: Response) => {
                 emailVerified: userFind.emailVerified
             };
             res.status(200).json(user);
-        } catch (error) {
-            res.status(400).json({ message: 'Something went wrong with the database query' });
         }
 
     } catch {

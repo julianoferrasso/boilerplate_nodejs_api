@@ -2,14 +2,13 @@ import jwt from 'jsonwebtoken';
 
 export interface dataToken extends jwt.JwtPayload {
     id: string;
-    email: string;
 }
 
-export const generateToken = async ({ id, email }: dataToken): Promise<string | null> => {
+export const generateToken = async (id: string): Promise<string | null> => {
     try {
-        return jwt.sign({ id, email }, process.env.JWT_SECRET as string, {
+        return jwt.sign({ id }, process.env.JWT_SECRET as string, {
             subject: id,
-            expiresIn: '48h',
+            expiresIn: '30d',
         });
     } catch (error) {
         return null;
@@ -18,6 +17,7 @@ export const generateToken = async ({ id, email }: dataToken): Promise<string | 
 
 export const verifyToken = async (token: string): Promise<dataToken | null> => {
     try {
+        console.log('Verifying token: ' + JSON.stringify(token));
         return jwt.verify(token, process.env.JWT_SECRET as string) as dataToken;
     } catch (error) {
         return null;

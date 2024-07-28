@@ -11,7 +11,9 @@ dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 const corsOptions = {
     // origin: 'https://seu-dominio-nextjs.com', // Limita as requisições pelo domínio da sua aplicação Next.js
-    optionsSuccessStatus: 200
+    origin: 'http://localhost:3000',
+    optionsSuccessStatus: 200,
+    credentials: true
 };
 
 const app = express();

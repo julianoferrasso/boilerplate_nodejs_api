@@ -5,6 +5,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { generateToken, dataToken } from '../config/jwtConfig';
 import { sendActivationAccountEmail, sendPasswordResetEmail } from '../services/serviceEmailAWS'
 import { compareTokenHash, generateResetTokenHash } from '../services/utils';
+import { dateCompareInHours, dateCompareInMinutes, dateNow } from '../services/dateService';
 
 // funcao para validar email
 const validateEmail = (email: any) => {
@@ -12,10 +13,13 @@ const validateEmail = (email: any) => {
     return regex.test(email);
 };
 
+// Objeto para controlar solicitações de resend email
+
 //const delay = (amount = 1000) => new Promise(resolve => setTimeout(resolve, amount))
 //await delay()
 
-export const signUp = async (req: Request, res: Response) => {
+export async function signUp(req: Request, res: Response) {
+    let userId = null
     try {
         let { name, email, celular, cpf_cnpj, password } = req.body;
         let cpf = null, cnpj = null
@@ -24,16 +28,15 @@ export const signUp = async (req: Request, res: Response) => {
         } else {
             cpf = cpf_cnpj
         }
-        //console.log(`tentando fazer registro com name "${name}", email "${email}", celular "${celular}", cpf "${cpf}", cnpj "${cnpj}", password "${password}"`)
-
+        // se nao tiver email ou password
         if (!email || !password) {
             return res.status(400).json({ error: 'Email e Senha requeridos' });
         }
         email = email.toLowerCase()
+        // se formato de email invalido
         if (!validateEmail(email)) {
             return res.status(400).json({ error: 'Email inválido.' });
         }
-
         // encripta a senha
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
@@ -69,18 +72,39 @@ export const signUp = async (req: Request, res: Response) => {
                 // cria usuario com dados basico para enviar como resposta ao front end
                 // necessario email para funcao de reenviar email caso usuario não receba 
                 const userCreated = { name, email }
-
+                userId = user.id
+                //console.log(user.id)
                 // envia email de ativação de conta
                 const emailActivationAccunt = await sendActivationAccountEmail(email, tokenEmailVerified)
                 if (emailActivationAccunt) {
                     res.status(201).json({ message: 'Usuario criado com sucesso', userCreated })
                 } else {
-                    res.status(201).json({ message: 'Usuario criado com sucesso, Mas não foi possivel enviar e-mail de ativação!', userCreated })
+                    // nao enviou email entao excluir usuario
+                    await prisma.user.delete({
+                        where: {
+                            id: user.id,
+                        },
+                    });
+                    res.status(501).json({ message: 'Estamos enfrentando um problema no servidor. Por favor tente mais tarde. Codigp[EM-1]' })
                 }
             } else {
                 res.status(409).json({ message: 'Email já cadastrado!' })
             }
         } catch (error) {
+            // se erro ao criar usuario tenta apagar usuario criado
+            if (userId) {
+                try {
+                    await prisma.user.delete({
+                        where: {
+                            id: userId,
+                        },
+                    });
+                } catch (error) {
+                    console.log(`Erro ao deletar user no Banco de Dados em authController: "${error}" `)
+                    res.status(500).json({ message: 'Estamos enfrentando um problema no servidor. Por favor tente mais tarde. Codigo[BD-1]' });
+                }
+            }
+            userId = null
             console.log(`Erro ao gravar no Banco de Dados em authController: "${error}" `)
             res.status(500).json({ message: 'Estamos enfrentando um problema no servidor. Por favor tente mais tarde. Codigo[BD-1]' });
         }
@@ -90,33 +114,32 @@ export const signUp = async (req: Request, res: Response) => {
     }
 };
 
-export const login = async (req: Request, res: Response) => {
+export async function signIn(req: Request, res: Response) {
     try {
         let { email, password } = req.body;
-        // console.log(`tentando fazer login com email "${email}" e password "${password}"`)
-
         if (!email || !password) {
             return res.status(400).json({ message: 'Email e Senha requeridos' });
         }
-
         email = email.toLowerCase()
-
         try {
             const findUserByEmail = await prisma.user.findUnique({
                 where: { email },
             });
-
+            // se nao encontrar email
             if (!findUserByEmail) {
                 return res.status(401).json({ message: 'Usuário ou senha incorreta' });
             }
+            // se senha errada
             const validPassword = await bcrypt.compare(password, findUserByEmail.password);
             if (!validPassword) {
                 return res.status(401).json({ message: 'Usuário ou senha incorreta' });
             }
+            // se email nao verificado
             if (!findUserByEmail.emailVerified) {
-                return res.status(401).json({ message: 'Email não verificado' });
+                return res.status(401).json({ message: 'Email_nao_verificado' });
             }
-            const token = await generateToken({ email: findUserByEmail.email, id: findUserByEmail.id } as dataToken);
+            // gerae token
+            const token = await generateToken(findUserByEmail.id)
             const user = {
                 id: findUserByEmail.id,
                 name: findUserByEmail.name,
@@ -124,7 +147,16 @@ export const login = async (req: Request, res: Response) => {
                 avatarUrl: findUserByEmail.avatarUrl,
                 celular: findUserByEmail.celular
             };
-            res.json({ token, user });
+            // Definindo o cookie HttpOnly
+            res.cookie('session_token', token, {
+                httpOnly: true,
+                secure: false,
+                //secure: process.env.NODE_ENV === 'production', // secure= "somente em https" - Define como true apenas em produção
+                maxAge: 7 * 60 * 60 * 1000, // 7 dias
+                path: '/',
+            });
+            // res.json({ token, user });
+            res.json({ user });
         } catch (error) {
             res.status(400).json({ message: 'Estamos enfrentando um problema no servidor. Por favor tente mais tarde. Codigo[BD-2]' });
         }
@@ -133,24 +165,50 @@ export const login = async (req: Request, res: Response) => {
     }
 };
 
-export const resendEmailActivation = async (req: Request, res: Response) => {
+export async function signOut(req: Request, res: Response) {
+    try {
+        console.log("fazendo sign out do user: ");
+        res.cookie('session_token', '', {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            expires: new Date(0), // Define o cookie para expirar no passado
+            path: '/',
+        });
+        res.status(200).json({ message: 'Logged out successfully' });
+
+    } catch (error) {
+        res.status(500).json({ message: 'Erro no logout' });
+    }
+}
+
+export async function resendEmailActivation(req: Request, res: Response) {
     try {
         let { email } = req.body
-        try {
-            if (!email) {
-                return res.status(400).json({ message: 'Email inválido' });
-            }
 
+        if (!email) {
+            return res.status(400).json({ message: 'Email inválido' });
+        }
+        try {
             // procura usuario pelo email
             const userByEmail = await prisma.user.findUnique({
                 where: {
                     email
                 }
             })
-
             // se nao encontrar usuario return erro 404
             if (!userByEmail) {
                 res.status(404).json({ message: "Email não encontrado!" })
+            }
+
+            // limita o envio de email depois de 5 minutos
+            if (userByEmail?.tokenEmailVerifiedExpires) {
+                const currentTime = dateNow()
+                const differenceInMinutes = dateCompareInMinutes(userByEmail!.tokenEmailVerifiedExpires, currentTime)
+                const minimumWaitMinutesTime = 5; // variavel para aguardar o tempo de envio de outro email
+                if ((60 - differenceInMinutes) < minimumWaitMinutesTime) {
+                    console.log(" diferenca menor que 5 minutos")
+                    return res.status(429).json({ message: 'Por favor, aguarde no mínimo 5 minutos antes de fazer uma nova solicitação.' });
+                }
             }
 
             // cria novo token
@@ -159,7 +217,7 @@ export const resendEmailActivation = async (req: Request, res: Response) => {
             // atualiza token no Banco de Dados
             await prisma.user.update({
                 where: { email },
-                data: { tokenEmailVerified, tokenEmailVerifiedExpires: new Date(Date.now() + 3600000) }, // Token expira em 1 hora
+                data: { tokenEmailVerified, tokenEmailVerifiedExpires: dateNow(60) }, // Token expira em 1 hora
             });
 
             const emailResetPasswordSent = await sendActivationAccountEmail(email, tokenEmailVerified)
@@ -178,15 +236,15 @@ export const resendEmailActivation = async (req: Request, res: Response) => {
     }
 }
 
-export const resetPassword = async (req: Request, res: Response) => {
+export async function resetPassword(req: Request, res: Response) {
     try {
         let { email } = req.body;
         let { token } = req.body;
         let { password } = req.body;
 
-        console.log(`tentando recuperar senha com email "${email}"`)
-        console.log(`tentando recuperar senha com token "${token}"`)
-        console.log(`tentando recuperar senha com password "${password}"`)
+        // console.log(`tentando recuperar senha com email "${email}"`)
+        // console.log(`tentando recuperar senha com token "${token}"`)
+        // console.log(`tentando recuperar senha com password "${password}"`)
 
         if (!email) {
             return res.status(400).json({ message: 'Email requerido' });
@@ -194,7 +252,7 @@ export const resetPassword = async (req: Request, res: Response) => {
 
         // Se tiver os 3 campos então reseta senha
         if (email && token && password) {
-            console.log(`Entrou no IF para alterar a senha "${password}"`)
+            // console.log(`Entrou no IF para alterar a senha "${password}"`)
             email = email.toLowerCase()
             try {
                 const findUserByEmail = await prisma.user.findUnique({
@@ -204,7 +262,7 @@ export const resetPassword = async (req: Request, res: Response) => {
                 if (!findUserByEmail) {
                     return res.status(400).json({ message: 'Email não cadastrado' });
                 }
-                console.log("token e exp", findUserByEmail.passwordResetHashToken, findUserByEmail.passwordResetTokenExpires)
+                // console.log("token e exp", findUserByEmail.passwordResetHashToken, findUserByEmail.passwordResetTokenExpires)
                 // Verifique se o token não é nulo
                 if (!findUserByEmail.passwordResetHashToken || !findUserByEmail.passwordResetTokenExpires) {
                     return res.status(400).json({ message: 'Token inválido' });
@@ -215,9 +273,9 @@ export const resetPassword = async (req: Request, res: Response) => {
                     return res.status(400).json({ message: 'Token expirado' });
                 }
                 // Se hash nao coincidir com token
-                console.log(`User.passwordResetTokenExpires "${findUserByEmail.passwordResetHashToken}"`)
+                // console.log(`User.passwordResetTokenExpires "${findUserByEmail.passwordResetHashToken}"`)
                 const result = await compareTokenHash(token, findUserByEmail.passwordResetHashToken)
-                console.log(`Result "${result}"`)
+                // console.log(`Result "${result}"`)
                 if (!result) {
                     return res.status(400).json({ message: 'Token inválido' });
                 }
@@ -246,6 +304,16 @@ export const resetPassword = async (req: Request, res: Response) => {
 
             if (!userFind) {
                 return res.status(404).json({ message: 'Email não cadastrado' });
+            }
+
+            // limita o envio de email depois de 5 minutos
+            if (userFind?.passwordResetTokenExpires) {
+                const currentTime = dateNow()
+                const differenceInMinutes = dateCompareInMinutes(userFind!.passwordResetTokenExpires, currentTime)
+                const minimumWaitMinutesTime = 5; // variavel para aguardar o tempo de envio de outro email
+                if ((60 - differenceInMinutes) < minimumWaitMinutesTime) {
+                    return res.status(429).json({ message: 'Por favor, aguarde no mínimo 5 minutos antes de fazer uma nova solicitação.' });
+                }
             }
 
             const { token, hash } = await generateResetTokenHash()
@@ -313,3 +381,4 @@ export async function verifyEmail(req: Request, res: Response) {
     }
 
 }
+
