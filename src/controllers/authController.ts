@@ -116,7 +116,9 @@ export async function signUp(req: Request, res: Response) {
 
 export async function signIn(req: Request, res: Response) {
     try {
-        let { email, password } = req.body;
+        let { email, password, rememberMe } = req.body;
+        // const maxAge = rememberMe ? 7 * 60 * 60 * 1000 : undefined
+        // console.log('tentando sigin com credenciais: email: ' + email + ' pass: ' + password + ' rememberMe: ' + rememberMe + ' maxAge: ' + maxAge)
         if (!email || !password) {
             return res.status(400).json({ message: 'Email e Senha requeridos' });
         }
@@ -148,14 +150,14 @@ export async function signIn(req: Request, res: Response) {
                 celular: findUserByEmail.celular
             };
             // Definindo o cookie HttpOnly
+            const maxAge = rememberMe ? 1000 * 60 * 60 * 24 * 7 : undefined  // se rememberMe 7 dias senao perde a sessao ao fehcar o browser    
             res.cookie('session_token', token, {
                 httpOnly: true,
                 secure: false,
                 //secure: process.env.NODE_ENV === 'production', // secure= "somente em https" - Define como true apenas em produção
-                maxAge: 7 * 60 * 60 * 1000, // 7 dias
+                maxAge,
                 path: '/',
             });
-            // res.json({ token, user });
             res.json({ user });
         } catch (error) {
             res.status(400).json({ message: 'Estamos enfrentando um problema no servidor. Por favor tente mais tarde. Codigo[BD-2]' });
