@@ -52,6 +52,37 @@ export async function updateProfilePicture(req: AuthRequest, res: Response) {
     }
 }
 
+export async function updateProfile(req: AuthRequest, res: Response) {
+    try {
+        if (req?.token?.id) {
+            const userId = req?.token?.id
+            const attributesUpdate: any = []
+
+            // 1. Construir o Array de Atualização
+            Object.entries(req.body).forEach(([key, value]) => {
+                attributesUpdate.push({ [key]: value })
+            })
+
+            // 2. Construir o Objeto de Atualização para o Prisma
+            const updateData = attributesUpdate.reduce((acc: any, curr: any) => {
+                return { ...acc, ...curr };
+            }, {});
+
+            const updateUser = await prisma.user.update({
+                where: { id: userId },
+                data: updateData
+            });
+
+            console.log(updateUser)
+            res.status(200).json({ message: "Dados atualizados!", dados: updateData })
+
+        }
+    } catch {
+        res.status(500).json({ message: "Algo deu errado" })
+    }
+
+}
+
 export const getUserProfile = async (req: AuthRequest, res: Response) => {
     try {
         const id = req?.token?.id

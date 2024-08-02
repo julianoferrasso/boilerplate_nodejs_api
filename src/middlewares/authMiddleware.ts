@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { dataToken } from '../config/jwtConfig'
+
 export interface AuthRequest extends Request {
     token?: dataToken;
     user?: any;
