@@ -17,6 +17,7 @@
     "@aws-sdk/client-ses": "^3.616.0",
     "@aws-sdk/s3-request-presigner": "^3.617.0",
     "@prisma/client": "^5.15.0",
+    "axios": "^1.7.3",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "crypto": "^1.0.1",
