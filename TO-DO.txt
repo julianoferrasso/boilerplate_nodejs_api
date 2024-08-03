@@ -1,1 +1,5 @@
 [] tratar cpf/cnpj antes de salvar no banco de dados
+[] consolidar funcao de service time 
+  [] criar tempo "now" em utc
+  [] comparar dois tempos < ou >
+  [] 
